@@ -1,0 +1,25 @@
+{
+  "name": "తెలుగు అస్ట్రోలజీ",
+  "short_name": "అస్ట్రోలజీ",
+  "description": "రోజువారీ పంచాంగం, కుండలి, మరియు వివాహ సరిహద్దు",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
