@@ -1,10 +1,3 @@
-// VedAstro API type definitions
-
-export interface VedAstroApiConfig {
-  baseUrl: string;
-  apiKey?: string;
-}
-
 export interface PanchangRequest {
   date: string; // YYYY-MM-DD
   latitude: number;

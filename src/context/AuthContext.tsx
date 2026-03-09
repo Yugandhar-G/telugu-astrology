@@ -1,13 +1,22 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase/client';
-import { getUserProfile, createUserProfile } from '@/lib/supabase/auth';
 import { UserProfile } from '@/types/user';
 
+const VALID_USERS = [
+  { email: 'yugandhargopu1@gmail.com', password: '123456', name: 'Yugandhar Gopu' },
+];
+
+const SESSION_KEY = 'astrology_session';
+
+interface LocalUser {
+  id: string;
+  email: string;
+  user_metadata: { full_name: string };
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: LocalUser | null;
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -18,112 +27,72 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function makeUser(email: string, name: string): LocalUser {
+  return { id: email, email, user_metadata: { full_name: name } };
+}
+
+function makeProfile(email: string, name: string): UserProfile {
+  return {
+    id: email,
+    email,
+    fullName: name,
+    gender: null,
+    birthDate: null,
+    birthTime: null,
+    birthPlace: null,
+    birthLatitude: null,
+    birthLongitude: null,
+    timezone: 'Asia/Kolkata',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<LocalUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Safety timeout: Force loading to false after 3 seconds if auth hangs
-    const timer = setTimeout(() => {
-      setLoading((prev) => {
-        if (prev) {
-          console.warn('Auth timeout: Forcing app load');
-          return false;
-        }
-        return prev;
-      });
-    }, 3000);
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      } else {
-        setLoading(false);
+    try {
+      const saved = localStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setUser(parsed.user);
+        setProfile(parsed.profile);
       }
-    }).catch((err) => {
-      console.warn('Auth initialization error:', err);
-      if (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.includes('dummy')) {
-        console.warn('Using dummy keys: Auth disabled.');
-      }
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await loadProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timer);
-    };
+    } catch {
+      // corrupted session — ignore
+    }
+    setLoading(false);
   }, []);
 
-  async function loadProfile(userId: string) {
-    try {
-      let userProfile = await getUserProfile(userId);
-
-      // Create profile if it doesn't exist
-      if (!userProfile && user) {
-        userProfile = await createUserProfile(userId, user.email || '', user.user_metadata?.full_name);
-      }
-
-      setProfile(userProfile);
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
-    if (data.user) {
-      await loadProfile(data.user.id);
-    }
+    const match = VALID_USERS.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+    if (!match) throw new Error('Invalid email or password');
+
+    const localUser = makeUser(match.email, match.name);
+    const localProfile = makeProfile(match.email, match.name);
+    setUser(localUser);
+    setProfile(localProfile);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ user: localUser, profile: localProfile }));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function signUp(email: string, password: string, fullName?: string) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-    if (error) throw error;
-    if (data.user) {
-      await loadProfile(data.user.id);
-    }
+    throw new Error('Registration is disabled. Please contact the administrator.');
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    localStorage.removeItem(SESSION_KEY);
   }
 
   async function refreshProfile() {
-    if (user) {
-      await loadProfile(user.id);
-    }
+    // no-op for local auth
   }
 
   return (

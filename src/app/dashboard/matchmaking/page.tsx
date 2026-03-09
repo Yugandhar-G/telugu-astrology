@@ -9,6 +9,7 @@ import { Loading } from '@/components/shared/Loading';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 import { SavedChart } from '@/types/user';
 import { MatchmakingData } from '@/types/astrology';
+import { getSavedCharts } from '@/lib/storage';
 
 export default function MatchmakingPage() {
   const { user } = useAuth();
@@ -25,15 +26,9 @@ export default function MatchmakingPage() {
     }
   }, [user]);
 
-  async function loadSavedCharts() {
+  function loadSavedCharts() {
     try {
-      const response = await fetch('/api/saved-charts');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setSavedCharts(result.data || []);
-        }
-      }
+      setSavedCharts(getSavedCharts());
     } catch (error) {
       console.error('Error loading saved charts:', error);
     }

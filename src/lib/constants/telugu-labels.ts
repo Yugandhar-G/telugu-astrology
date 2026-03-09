@@ -160,19 +160,19 @@ export function translateToTelugu(text: string | null | undefined): string {
   const cleanText = text.split('(')[0].trim();
 
   // Check in Planets
-  const planet = Object.entries(TELUGU_LABELS.astrology.planets).find(([en, te]) =>
+  const planet = Object.entries(TELUGU_LABELS.astrology.planets).find(([en]) =>
     cleanText.toLowerCase() === en.toLowerCase()
   );
   if (planet) return planet[1];
 
   // Check in Rashis
-  const rashi = Object.entries(TELUGU_LABELS.astrology.rashis).find(([en, te]) =>
+  const rashi = Object.entries(TELUGU_LABELS.astrology.rashis).find(([en]) =>
     cleanText.toLowerCase() === en.toLowerCase()
   );
   if (rashi) return rashi[1];
 
   // Check in Nakshatras
-  const nakshatra = Object.entries(TELUGU_LABELS.astrology.nakshatras).find(([en, te]) =>
+  const nakshatra = Object.entries(TELUGU_LABELS.astrology.nakshatras).find(([en]) =>
     cleanText.replace(/\s/g, '').toLowerCase() === en.toLowerCase()
   );
   if (nakshatra) return nakshatra[1];

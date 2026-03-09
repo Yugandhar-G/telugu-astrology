@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#ffffff"/>
+  <rect x="16" y="16" width="480" height="480" rx="72" fill="none" stroke="#6366f1" stroke-width="8"/>
+  <!-- South Indian chart pattern -->
+  <line x1="16" y1="16" x2="496" y2="496" stroke="#6366f1" stroke-width="6"/>
+  <line x1="496" y1="16" x2="16" y2="496" stroke="#6366f1" stroke-width="6"/>
+  <rect x="128" y="128" width="256" height="256" fill="#ffffff" stroke="#6366f1" stroke-width="6" transform="rotate(45 256 256)"/>
+  <!-- Om symbol -->
+  <text x="256" y="280" text-anchor="middle" font-size="120" fill="#6366f1" font-family="serif">P</text>
+</svg>

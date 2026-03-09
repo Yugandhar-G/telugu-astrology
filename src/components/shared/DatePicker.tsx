@@ -106,7 +106,7 @@ export function DatePicker({ selected, onChange, className = '' }: DatePickerPro
     const renderDays = () => {
         const dateFormat = 'EEE';
         const days = [];
-        let startDate = startOfWeek(currentMonth, { weekStartsOn: 0 });
+        const startDate = startOfWeek(currentMonth, { weekStartsOn: 0 });
 
         for (let i = 0; i < 7; i++) {
             days.push(

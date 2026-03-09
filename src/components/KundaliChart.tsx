@@ -14,7 +14,6 @@ interface KundaliChartProps {
 
 export function KundaliChart({ data, displayDate, sankalpam }: KundaliChartProps) {
   const planets = data.planets || [];
-  const houses = data.houses || [];
 
   // Use displayDate (from client input) if available, otherwise data.birthDate
   const dateToShow = displayDate || data.birthDate;

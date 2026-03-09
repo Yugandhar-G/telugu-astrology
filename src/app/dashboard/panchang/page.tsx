@@ -1,12 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { usePanchang } from '@/hooks/usePanchang';
 import { PanchangCard } from '@/components/PanchangCard';
 import { DatePicker } from '@/components/shared/DatePicker';
 import { Loading } from '@/components/shared/Loading';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
+
+// Get current date in Indian timezone (IST = UTC+5:30)
+function getIndianDate(): Date {
+  const now = new Date();
+  // Convert to IST by adding 5.5 hours to UTC
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+  const istTime = new Date(utcTime + istOffset);
+  // Return a date object for that calendar day at noon (to avoid day boundary issues)
+  return new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate(), 12, 0, 0);
+}
 
 export default function PanchangPage() {
   const { userLocation, timezone } = useApp();
@@ -16,15 +27,20 @@ export default function PanchangPage() {
 
   useEffect(() => {
     setMounted(true);
-    setSelectedDate(new Date());
+    // Always use current Indian date, not local machine date
+    setSelectedDate(getIndianDate());
   }, []);
 
+  // Pass null to usePanchang when not mounted - it will handle it
   const { data, loading, error } = usePanchang(
-    selectedDate || new Date(),
+    selectedDate,
     userLocation.latitude,
     userLocation.longitude,
     timezone
   );
+
+  // Memoize the date for DatePicker
+  const pickerDate = useMemo(() => selectedDate || new Date(), [selectedDate]);
 
   if (!mounted) {
     return null; // Or a skeleton
@@ -41,7 +57,7 @@ export default function PanchangPage() {
             Select Date
           </label>
           <DatePicker
-            selected={selectedDate || new Date()}
+            selected={pickerDate}
             onChange={setSelectedDate}
           />
         </div>

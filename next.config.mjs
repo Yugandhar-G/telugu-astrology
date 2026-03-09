@@ -1,14 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  serverExternalPackages: ['astronomy-engine'],
   images: {
-    domains: [],
+    remotePatterns: [],
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // PWA configuration
   async headers() {
     return [
       {
@@ -24,4 +20,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

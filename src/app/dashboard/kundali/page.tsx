@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useKundali } from '@/hooks/useKundali';
 import { KundaliChart } from '@/components/KundaliChart';
@@ -12,8 +12,11 @@ import { Button } from '@/components/shared/Button';
 import { Loading } from '@/components/shared/Loading';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/lib/supabase/client';
+import { saveChart } from '@/lib/storage';
 import { INDIAN_CITIES } from '@/lib/constants/cities';
+
+// Pre-compute city lookup map for O(1) lookup
+const cityMap = new Map(INDIAN_CITIES.map(c => [c.name.toLowerCase(), c]));
 
 export default function KundaliPage() {
   const { userLocation, timezone } = useApp();
@@ -28,6 +31,21 @@ export default function KundaliPage() {
   const [longitude, setLongitude] = useState(userLocation.longitude);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [sankalpam, setSankalpam] = useState('');
+
+  // Memoize selected date to prevent re-renders
+  const selectedBirthDate = useMemo(() => {
+    if (!birthDate) return new Date();
+    const [y, m, d] = birthDate.split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0);
+  }, [birthDate]);
+
+  // Memoize date change handler
+  const handleDateChange = useCallback((date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    setBirthDate(`${yyyy}-${mm}-${dd}`);
+  }, []);
 
   async function handleGenerate() {
     if (!name || !birthDate || !birthTime) {
@@ -46,38 +64,12 @@ export default function KundaliPage() {
     });
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!data || !user) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        alert('Authentication error: No session found');
-        return;
-      }
-
-      const response = await fetch('/api/saved-charts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          personName: data.personName,
-          birthData: { ...data, sankalpam },
-          chartType: 'kundali',
-        }),
-      });
-
-      if (response.ok) {
-        alert('Chart saved successfully!');
-      } else {
-        const err = await response.json();
-        console.error('Save chart failed:', err);
-        alert(`Failed to save chart: ${err.error || 'Unknown error'}`);
-      }
+      saveChart(data.personName, { ...data, sankalpam }, 'kundali');
+      alert('Chart saved successfully!');
     } catch (error) {
       console.error('Error saving chart:', error);
       alert('Failed to save chart');
@@ -110,20 +102,8 @@ export default function KundaliPage() {
               {TELUGU_LABELS.kundali.birthDate} *
             </label>
             <DatePicker
-              selected={(() => {
-                if (!birthDate) return new Date();
-                // Parse YYYY-MM-DD manually to create local date at noon
-                // This prevents "new Date(string)" from being treated as UTC and shifting to previous day
-                const [y, m, d] = birthDate.split('-').map(Number);
-                return new Date(y, m - 1, d, 12, 0, 0);
-              })()}
-              onChange={(date: Date) => {
-                // Ensure YYYY-MM-DD format for API
-                const yyyy = date.getFullYear();
-                const mm = String(date.getMonth() + 1).padStart(2, '0');
-                const dd = String(date.getDate()).padStart(2, '0');
-                setBirthDate(`${yyyy}-${mm}-${dd}`);
-              }}
+              selected={selectedBirthDate}
+              onChange={handleDateChange}
               className="w-full"
             />
 
@@ -150,8 +130,8 @@ export default function KundaliPage() {
                   const place = e.target.value;
                   setBirthPlace(place);
 
-                  // Auto-update coordinates if place matches a known city
-                  const city = INDIAN_CITIES.find(c => c.name.toLowerCase() === place.toLowerCase());
+                  // Auto-update coordinates if place matches a known city (O(1) lookup)
+                  const city = cityMap.get(place.toLowerCase());
                   if (city) {
                     setLatitude(city.lat);
                     setLongitude(city.lng);

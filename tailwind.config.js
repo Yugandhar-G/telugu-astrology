@@ -22,7 +22,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        telugu: ['Noto Sans Telugu', 'sans-serif'],
+        telugu: ['var(--font-telugu)', 'Noto Sans Telugu', 'sans-serif'],
       },
     },
   },

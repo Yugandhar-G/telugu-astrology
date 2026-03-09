@@ -3,8 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Loading } from '@/components/shared/Loading';
-import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 
 export default function Home() {
   const router = useRouter();

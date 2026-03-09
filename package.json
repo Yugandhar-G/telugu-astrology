@@ -9,13 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
     "astronomy-engine": "^2.1.19",
     "date-fns": "^3.0.0",
     "date-fns-tz": "^3.0.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
-    "next": "^14.2.0",
+    "next": "^15.3.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "zod": "^3.22.4"

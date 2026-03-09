@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/shared/Button';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';

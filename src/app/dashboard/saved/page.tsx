@@ -8,7 +8,7 @@ import { Button } from '@/components/shared/Button';
 import { Loading } from '@/components/shared/Loading';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 import { PDFGenerator } from '@/components/PDFGenerator';
-import { supabase } from '@/lib/supabase/client';
+import { getSavedCharts, deleteChart } from '@/lib/storage';
 
 export default function SavedChartsPage() {
   const { user } = useAuth();
@@ -18,63 +18,21 @@ export default function SavedChartsPage() {
 
   useEffect(() => {
     if (user) {
-      loadSavedCharts();
+      setSavedCharts(getSavedCharts());
     }
+    setLoading(false);
   }, [user]);
 
-  async function loadSavedCharts() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) return;
-
-      const response = await fetch('/api/saved-charts', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setSavedCharts(result.data || []);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading saved charts:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDelete(chartId: string) {
+  function handleDelete(chartId: string) {
     if (!confirm('Are you sure you want to delete this chart?')) {
       return;
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        alert('Authentication error: No session found');
-        return;
-      }
-
-      const response = await fetch(`/api/saved-charts?id=${chartId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        await loadSavedCharts();
-        if (selectedChart?.id === chartId) {
-          setSelectedChart(null);
-        }
-      } else {
-        alert('Failed to delete chart');
+      deleteChart(chartId);
+      setSavedCharts(getSavedCharts());
+      if (selectedChart?.id === chartId) {
+        setSelectedChart(null);
       }
     } catch (error) {
       console.error('Error deleting chart:', error);

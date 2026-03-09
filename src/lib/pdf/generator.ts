@@ -1,8 +1,3 @@
-// PDF generation utilities using jsPDF and html2canvas
-
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-
 const HEADER_IMAGE_PATH = '/bhaskar bharadwaj.png';
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -19,18 +14,16 @@ export async function generateKundaliPDF(
   element: HTMLElement,
   filename: string = 'kundali.pdf'
 ): Promise<void> {
-  // Load header image
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
+
   let headerImg: HTMLImageElement | null = null;
   try {
-    console.log('Attempting to load header image from:', HEADER_IMAGE_PATH);
-    console.log('Window origin:', window.location.origin);
-    const fullPath = window.location.origin + HEADER_IMAGE_PATH;
-    console.log('Full path:', fullPath);
-
     headerImg = await loadImage(HEADER_IMAGE_PATH);
-    console.log('Header image loaded successfully', headerImg.width, headerImg.height);
-  } catch (error) {
-    console.error('Could not load header image:', error);
+  } catch {
+    // Header image failed to load - continue without it
   }
 
   const canvas = await html2canvas(element, {
@@ -70,9 +63,6 @@ export async function generateKundaliPDF(
 
     while (heightLeft > 0) {
       pdf.addPage();
-      // Reset position for new page
-      // Optionally add header to new pages too? simpler to not add for now unless asked
-      let newPageY = 0;
 
       // Calculate position relative to the top of the image being rendered off-canvas
       // This simple loop logic from original code was a bit naive for offsets, let's stick to standard simple paging
@@ -96,12 +86,16 @@ export async function generateMatchmakingPDF(
   element: HTMLElement,
   filename: string = 'matchmaking.pdf'
 ): Promise<void> {
-  // Load header image
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
+
   let headerImg: HTMLImageElement | null = null;
   try {
     headerImg = await loadImage(HEADER_IMAGE_PATH);
-  } catch (error) {
-    console.error('Could not load header image', error);
+  } catch {
+    // Header image failed to load - continue without it
   }
 
   const canvas = await html2canvas(element, {

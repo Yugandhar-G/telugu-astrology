@@ -1,6 +1,42 @@
 -- Drop existing tables to ensure clean slate
 drop table if exists public.saved_matchings;
 drop table if exists public.saved_charts;
+drop table if exists public.profiles;
+
+-- Create profiles table (referenced by auth helpers)
+create table public.profiles (
+  id uuid references auth.users(id) on delete cascade primary key,
+  email text not null,
+  full_name text,
+  gender text,
+  birth_date text,
+  birth_time text,
+  birth_place text,
+  birth_latitude numeric,
+  birth_longitude numeric,
+  timezone text not null default 'Asia/Kolkata',
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null
+);
+
+alter table public.profiles enable row level security;
+
+create policy "Users can view their own profile"
+on public.profiles for select
+to authenticated
+using (auth.uid() = id);
+
+create policy "Users can insert their own profile"
+on public.profiles for insert
+to authenticated
+with check (auth.uid() = id);
+
+create policy "Users can update their own profile"
+on public.profiles for update
+to authenticated
+using (auth.uid() = id);
+
+grant all on public.profiles to authenticated;
 
 -- Create saved_charts table
 create table public.saved_charts (
@@ -13,10 +49,8 @@ create table public.saved_charts (
   updated_at timestamptz default now() not null
 );
 
--- Enable RLS for saved_charts
 alter table public.saved_charts enable row level security;
 
--- Policies for saved_charts
 create policy "Users can view their own charts"
 on public.saved_charts for select
 to authenticated
@@ -43,10 +77,8 @@ create table public.saved_matchings (
   created_at timestamptz default now() not null
 );
 
--- Enable RLS for saved_matchings
 alter table public.saved_matchings enable row level security;
 
--- Policies for saved_matchings
 create policy "Users can view their own matchings"
 on public.saved_matchings for select
 to authenticated
@@ -62,6 +94,5 @@ on public.saved_matchings for delete
 to authenticated
 using (auth.uid() = user_id);
 
--- Grant access to authenticated users
 grant all on public.saved_charts to authenticated;
 grant all on public.saved_matchings to authenticated;

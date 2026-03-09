@@ -1,49 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/shared/Button';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 import { TeluguText } from '@/components/shared/TeluguText';
 
 export default function SignupPage() {
-  const router = useRouter();
-  const { signUp } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await signUp(email, password, fullName);
-      router.push('/dashboard/panchang');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="max-w-md w-full space-y-8">
       <div>

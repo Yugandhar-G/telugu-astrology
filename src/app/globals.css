@@ -8,16 +8,15 @@
 }
 
 body {
-  font-family: 'Inter', 'Noto Sans Telugu', sans-serif;
+  font-family: var(--font-inter), 'Inter', sans-serif;
 }
 
 .font-telugu {
-  font-family: 'Noto Sans Telugu', sans-serif;
+  font-family: var(--font-telugu), 'Noto Sans Telugu', sans-serif;
 }
 
-/* Telugu typography improvements */
 .telugu-text {
-  font-family: 'Noto Sans Telugu', sans-serif;
+  font-family: var(--font-telugu), 'Noto Sans Telugu', sans-serif;
   line-height: 1.8;
 }
 

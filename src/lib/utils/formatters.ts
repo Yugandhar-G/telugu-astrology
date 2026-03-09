@@ -7,21 +7,20 @@ export function formatDate(date: string | Date, formatStr: string = 'yyyy-MM-dd'
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     return format(dateObj, formatStr);
-  } catch (error) {
+  } catch {
     return '';
   }
 }
 
 export function formatTime(time: string, timezone: string = 'Asia/Kolkata'): string {
   try {
-    // If time is in HH:mm format, convert to full datetime
     const today = new Date();
     const [hours, minutes] = time.split(':');
     const dateTime = new Date(today);
     dateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
     
     return formatInTimeZone(dateTime, timezone, 'HH:mm');
-  } catch (error) {
+  } catch {
     return time;
   }
 }
@@ -34,7 +33,7 @@ export function formatDateTime(
   try {
     const dateObj = typeof dateTime === 'string' ? parseISO(dateTime) : dateTime;
     return formatInTimeZone(dateObj, timezone, formatStr);
-  } catch (error) {
+  } catch {
     return '';
   }
 }
@@ -52,7 +51,7 @@ export function formatTeluguDate(date: string | Date): string {
     const month = months[dateObj.getMonth()];
     const year = dateObj.getFullYear();
     return `${day} ${month} ${year}`;
-  } catch (error) {
+  } catch {
     return '';
   }
 }

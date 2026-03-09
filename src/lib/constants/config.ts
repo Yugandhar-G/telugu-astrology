@@ -6,9 +6,6 @@ export const APP_CONFIG = {
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@example.com',
   vedAstroApiUrl: process.env.NEXT_PUBLIC_VEDASTRO_API_URL || 'http://localhost:8000/api',
   vedAstroApiKey: process.env.VEDASTRO_API_KEY || process.env.NEXT_PUBLIC_VEDASTRO_API_KEY || '',
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-  supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
 } as const;
 
 export const DEFAULT_TIMEZONE = 'Asia/Kolkata';

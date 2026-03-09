@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from './shared/Button';
-import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 
 interface LocationPickerProps {
   onLocationSelect: (lat: number, lng: number, place: string) => void;

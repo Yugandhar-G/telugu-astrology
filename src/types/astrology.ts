@@ -64,6 +64,8 @@ export interface KundaliData {
   lagnaLord: string;
   moonSign: string;
   sunSign: string;
+  isManglik?: boolean;
+  nodeType?: string;
   dashas?: DashaData[];
   sankalpam?: string;
 }

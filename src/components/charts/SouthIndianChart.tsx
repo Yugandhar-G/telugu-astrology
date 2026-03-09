@@ -1,5 +1,5 @@
 import React from 'react';
-import { KundaliData, PlanetPosition } from '@/types/astrology';
+import { KundaliData } from '@/types/astrology';
 
 // Standard Zodiac Glyph Vectors (Verified)
 const ZODIAC_ICONS: Record<number, string> = {
@@ -23,7 +23,7 @@ interface SouthIndianChartProps {
 }
 
 export function SouthIndianChart({ data, className = '' }: SouthIndianChartProps) {
-    const { planets, lagna, houses } = data;
+    const { planets, lagna } = data;
 
     const signToGridMap: Record<number, { r: number, c: number }> = {
         0: { r: 0, c: 1 }, // Mesha

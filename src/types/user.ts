@@ -15,11 +15,12 @@ export interface UserProfile {
   updatedAt: string;
 }
 
+import { KundaliData } from './astrology';
+
 export interface SavedChart {
   id: string;
-  userId: string;
   personName: string;
-  birthData: any; // JSONB from Supabase
+  birthData: KundaliData & { sankalpam?: string };
   chartType: 'kundali' | 'transit' | 'dasha';
   createdAt: string;
   updatedAt: string;
@@ -27,10 +28,10 @@ export interface SavedChart {
 
 export interface SavedMatching {
   id: string;
-  userId: string;
   person1ChartId: string | null;
   person2ChartId: string | null;
-  matchingData: any; // JSONB from Supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  matchingData: any;
   gunaScore: number;
   createdAt: string;
 }

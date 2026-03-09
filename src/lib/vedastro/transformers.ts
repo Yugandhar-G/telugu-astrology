@@ -16,7 +16,9 @@ import {
 export function transformPanchangResponse(
   response: VedAstroPanchangResponse,
   date: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   latitude: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   longitude: number
 ): PanchangData {
   return {
@@ -58,6 +60,7 @@ export function transformKundaliResponse(
   longitude: number,
   timezone: string
 ): KundaliData {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const planets: PlanetPosition[] = (response.planets || []).map((p: any) => ({
     name: p.name || '',
     longitude: p.longitude || 0,
@@ -69,6 +72,7 @@ export function transformKundaliResponse(
     dignity: p.dignity || '',
   }));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const houses: HouseData[] = (response.houses || []).map((h: any) => ({
     number: h.number || 0,
     sign: h.sign || '',
@@ -90,6 +94,8 @@ export function transformKundaliResponse(
     lagnaLord: response.lagnaLord || '',
     moonSign: response.moonSign || '',
     sunSign: response.sunSign || '',
+    isManglik: response.isManglik ?? false,
+    nodeType: response.nodeType || 'true',
   };
 }
 

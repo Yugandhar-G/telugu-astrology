@@ -1,5 +1,4 @@
-// API response type definitions
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -12,12 +11,13 @@ export interface VedAstroPanchangResponse {
   nakshatra?: string;
   yoga?: string;
   karana?: string;
+  vara?: string;
   masa?: string;
   paksha?: string;
-  rahuKalam?: {
-    start?: string;
-    end?: string;
-  };
+  rahuKalam?: { start?: string; end?: string };
+  yamagandam?: { start?: string; end?: string };
+  gulikaKalam?: { start?: string; end?: string };
+  abhijitMuhurtham?: { start?: string; end?: string };
   sunrise?: string;
   sunset?: string;
   [key: string]: any;
@@ -29,6 +29,7 @@ export interface VedAstroKundaliResponse {
     longitude?: number;
     latitude?: number;
     sign?: string;
+    signCode?: string;
     house?: number;
     nakshatra?: string | { name: string; lord: string; padam: number };
     [key: string]: any;
@@ -41,6 +42,10 @@ export interface VedAstroKundaliResponse {
   }>;
   lagna?: string;
   lagnaLord?: string;
+  moonSign?: string;
+  sunSign?: string;
+  isManglik?: boolean;
+  nodeType?: string;
   [key: string]: any;
 }
 
@@ -63,5 +68,6 @@ export interface VedAstroMatchmakingResponse {
     bhakoot?: number;
     nadi?: number;
   };
+  recommendation?: string;
   [key: string]: any;
 }

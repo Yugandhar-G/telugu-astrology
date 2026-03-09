@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { generateKundaliPDF, generateMatchmakingPDF } from '@/lib/pdf/generator';
 import { Button } from './shared/Button';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
