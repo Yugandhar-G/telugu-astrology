@@ -12,12 +12,14 @@ interface PanchangCardProps {
 
 export function PanchangCard({ data }: PanchangCardProps) {
   const items = [
+    { label: 'సంవత్సరం', value: data.samvatsara },
+    { label: TELUGU_LABELS.panchang.masa, value: data.masa },
+    { label: 'సౌర మాసం', value: data.teluguMasa },
+    { label: TELUGU_LABELS.panchang.paksha, value: data.paksha },
     { label: TELUGU_LABELS.panchang.tithi, value: data.tithi },
     { label: TELUGU_LABELS.panchang.nakshatra, value: data.nakshatra },
     { label: TELUGU_LABELS.panchang.yoga, value: data.yoga },
     { label: TELUGU_LABELS.panchang.karana, value: data.karana },
-    { label: TELUGU_LABELS.panchang.masa, value: data.masa },
-    { label: TELUGU_LABELS.panchang.paksha, value: data.paksha },
   ];
 
   const timings = [

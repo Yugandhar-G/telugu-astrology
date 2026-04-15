@@ -7,13 +7,12 @@ import { KundaliChart } from '@/components/KundaliChart';
 import { DatePicker } from '@/components/shared/DatePicker';
 import { TimePicker } from '@/components/shared/TimePicker';
 import { LocationPicker } from '@/components/LocationPicker';
-import { PDFGenerator } from '@/components/PDFGenerator';
 import { Button } from '@/components/shared/Button';
 import { Loading } from '@/components/shared/Loading';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 import { useAuth } from '@/context/AuthContext';
 import { saveChartToDrive } from '@/lib/storage';
-import { generateKundaliPDFBlob } from '@/lib/pdf/generator';
+import { generateKundaliPDFBlob, generateKundaliPDF } from '@/lib/pdf/generator';
 import { INDIAN_CITIES } from '@/lib/constants/cities';
 
 // Pre-compute city lookup map for O(1) lookup
@@ -214,15 +213,23 @@ export default function KundaliPage() {
           <div className="mb-4 flex space-x-2">
             {user && (
               <Button
-                variant="secondary"
+                variant="primary"
                 onClick={handleSave}
                 isLoading={savingToDrive}
                 disabled={savingToDrive}
               >
-                {savingToDrive ? 'Saving to Drive...' : TELUGU_LABELS.kundali.save}
+                {savingToDrive ? 'Saving...' : `${TELUGU_LABELS.kundali.save} (Cloud)`}
               </Button>
             )}
-            <PDFGenerator type="kundali" elementId="kundali-chart" filename={`kundali_${data.personName}.pdf`} />
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const el = document.getElementById('kundali-chart');
+                if (el) await generateKundaliPDF(el, `kundali_${data.personName}.pdf`);
+              }}
+            >
+              ↓ Download PDF
+            </Button>
           </div>
           <div id="kundali-chart">
             <KundaliChart data={data} displayDate={birthDate} sankalpam={sankalpam} />

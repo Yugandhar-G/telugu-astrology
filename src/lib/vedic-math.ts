@@ -207,8 +207,38 @@ export function calculatePanchang(date: Date, location: Location) {
     const localDate = new Date(date.getTime() + (tzOffset * 60 * 60 * 1000));
     const vara = days[localDate.getUTCDay()];
 
-    // Masa (solar month)
+    // Masa (lunar month based on solar month)
     const solarMonthIndex = Math.floor(sunLon / 30);
+    const TELUGU_MASAS = [
+      "మేష మాసం", "వృషభ మాసం", "మిథున మాసం", "కర్కాటక మాసం",
+      "సింహ మాసం", "కన్యా మాసం", "తులా మాసం", "వృశ్చిక మాసం",
+      "ధనుస్సు మాసం", "మకర మాసం", "కుంభ మాసం", "మీన మాసం"
+    ];
+    const CHANDRAMANA_MASAS = [
+      "చైత్రం", "వైశాఖం", "జ్యేష్ఠం", "ఆషాఢం",
+      "శ్రావణం", "భాద్రపదం", "ఆశ్వయుజం", "కార్తీకం",
+      "మార్గశిరం", "పుష్యం", "మాఘం", "ఫాల్గుణం"
+    ];
+    const chandramanaIndex = (solarMonthIndex + 0) % 12;
+
+    // Samvatsara (60-year cycle)
+    const SAMVATSARAS = [
+      "ప్రభవ", "విభవ", "శుక్ల", "ప్రమోదూత", "ప్రజోత్పత్తి",
+      "ఆంగీరస", "శ్రీముఖ", "భావ", "యువ", "ధాతు",
+      "ఈశ్వర", "బహుధాన్య", "ప్రమాధి", "విక్రమ", "వృష",
+      "చిత్రభాను", "స్వభాను", "తారణ", "పార్ధివ", "వ్యయ",
+      "సర్వజిత్", "సర్వధారి", "విరోధి", "వికృతి", "ఖర",
+      "నందన", "విజయ", "జయ", "మన్మథ", "దుర్ముఖి",
+      "హేవిళంబి", "విళంబి", "వికారి", "శార్వరి", "ప్లవ",
+      "శుభకృత్", "శోభకృత్", "క్రోధి", "విశ్వావసు", "పరాభవ",
+      "ప్లవంగ", "కీలక", "సౌమ్య", "సాధారణ", "విరోధికృత్",
+      "పరీధావి", "ప్రమాదీచ", "ఆనంద", "రాక్షస", "నల",
+      "పింగళ", "కాళయుక్తి", "సిద్ధార్థి", "రౌద్రి", "దుర్మతి",
+      "దుందుభి", "రుధిరోద్గారి", "రక్తాక్షి", "క్రోధన", "అక్షయ"
+    ];
+    const gregYear = localDate.getUTCFullYear();
+    const samvatsaraIndex = ((gregYear - 1987 + 3) % 60 + 60) % 60;
+    const samvatsara = SAMVATSARAS[samvatsaraIndex];
 
     // Sunrise / Sunset
     const observer = new Astronomy.Observer(location.latitude, location.longitude, 0);
@@ -278,7 +308,9 @@ export function calculatePanchang(date: Date, location: Location) {
         yoga: YOGAS[yogaIndex],
         karana: karanaName,
         vara,
-        masa: SIGNS[solarMonthIndex],
+        masa: CHANDRAMANA_MASAS[chandramanaIndex],
+        teluguMasa: TELUGU_MASAS[solarMonthIndex],
+        samvatsara,
         paksha,
         sunrise: formatTime(sunriseTime),
         sunset: formatTime(sunsetTime),

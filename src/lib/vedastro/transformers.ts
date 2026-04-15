@@ -28,6 +28,8 @@ export function transformPanchangResponse(
     yoga: response.yoga || '',
     karana: response.karana || '',
     masa: response.masa || '',
+    teluguMasa: response.teluguMasa || '',
+    samvatsara: response.samvatsara || '',
     paksha: response.paksha || '',
     rahuKalam: {
       start: response.rahuKalam?.start || '',

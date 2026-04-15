@@ -10,252 +10,143 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
   });
 };
 
-export async function generateKundaliPDF(
+const PDF_WIDTH_MM = 210;
+const PDF_HEIGHT_MM = 297;
+const MARGIN_MM = 5;
+
+async function captureElement(element: HTMLElement) {
+  const { default: html2canvas } = await import('html2canvas');
+  return html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    scrollY: -window.scrollY,
+    windowHeight: element.scrollHeight,
+  });
+}
+
+function sliceCanvasToPages(
+  canvas: HTMLCanvasElement,
+  headerImg: HTMLImageElement | null
+) {
+  const contentWidthMM = PDF_WIDTH_MM;
+  const scale = canvas.width / contentWidthMM;
+
+  let headerHeightMM = 0;
+  if (headerImg) {
+    headerHeightMM = (headerImg.height * contentWidthMM) / headerImg.width;
+  }
+
+  const firstPageContentMM = PDF_HEIGHT_MM - headerHeightMM - MARGIN_MM;
+  const subsequentPageContentMM = PDF_HEIGHT_MM - MARGIN_MM * 2;
+
+  const totalContentMM = (canvas.height / scale);
+  const pages: { sx: number; sy: number; sw: number; sh: number; isFirst: boolean }[] = [];
+
+  let remainingMM = totalContentMM;
+  let currentSourceY = 0;
+
+  // First page
+  const firstSliceMM = Math.min(remainingMM, firstPageContentMM);
+  const firstSlicePx = Math.round(firstSliceMM * scale);
+  pages.push({
+    sx: 0,
+    sy: currentSourceY,
+    sw: canvas.width,
+    sh: firstSlicePx,
+    isFirst: true,
+  });
+  currentSourceY += firstSlicePx;
+  remainingMM -= firstSliceMM;
+
+  while (remainingMM > 0.5) {
+    const sliceMM = Math.min(remainingMM, subsequentPageContentMM);
+    const slicePx = Math.round(sliceMM * scale);
+    pages.push({
+      sx: 0,
+      sy: currentSourceY,
+      sw: canvas.width,
+      sh: Math.min(slicePx, canvas.height - currentSourceY),
+      isFirst: false,
+    });
+    currentSourceY += slicePx;
+    remainingMM -= sliceMM;
+  }
+
+  return { pages, headerHeightMM, scale };
+}
+
+async function buildPDF(
   element: HTMLElement,
-  filename: string = 'kundali.pdf'
-): Promise<void> {
-  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-    import('jspdf'),
-    import('html2canvas'),
-  ]);
+  mode: 'save' | 'blob',
+  filename?: string
+) {
+  const { default: jsPDF } = await import('jspdf');
+  const canvas = await captureElement(element);
 
   let headerImg: HTMLImageElement | null = null;
   try {
     headerImg = await loadImage(HEADER_IMAGE_PATH);
   } catch {
-    // Header image failed to load - continue without it
+    // continue without header
   }
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-  });
-
-  const imgData = canvas.toDataURL('image/png');
+  const { pages, headerHeightMM, scale } = sliceCanvasToPages(canvas, headerImg);
   const pdf = new jsPDF('p', 'mm', 'a4');
-  const pdfWidth = 210;
-  const pdfHeight = 297;
 
-  let currentY = 0;
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    if (i > 0) pdf.addPage();
 
-  // Add header if loaded
-  if (headerImg) {
-    const headerHeight = (headerImg.height * pdfWidth) / headerImg.width;
-    pdf.addImage(headerImg, 'PNG', 0, 0, pdfWidth, headerHeight);
-    currentY = headerHeight + 5; // 5mm padding
-  }
+    let yOffset = MARGIN_MM;
 
-  const contentWidth = pdfWidth;
-  const contentHeight = (canvas.height * contentWidth) / canvas.width;
-
-  // If content fits on the rest of the page
-  if (currentY + contentHeight <= pdfHeight) {
-    pdf.addImage(imgData, 'PNG', 0, currentY, contentWidth, contentHeight);
-  } else {
-    // Multi-page logic
-    let heightLeft = contentHeight;
-    let position = currentY;
-
-    // First page
-    pdf.addImage(imgData, 'PNG', 0, position, contentWidth, contentHeight);
-    heightLeft -= (pdfHeight - position);
-
-    while (heightLeft > 0) {
-      pdf.addPage();
-
-      // Calculate position relative to the top of the image being rendered off-canvas
-      // This simple loop logic from original code was a bit naive for offsets, let's stick to standard simple paging
-      // Actually, standard approach:
-      position = -(contentHeight - heightLeft); // Negative offset to show bottom part
-
-      // But wait, the original code logic:
-      // position = heightLeft - imgHeight; 
-      // is for "rendering the remaining part"?
-
-      // Let's use a simpler approach for multi-page canvas:
-      pdf.addImage(imgData, 'PNG', 0, - (contentHeight - heightLeft), contentWidth, contentHeight);
-      heightLeft -= pdfHeight;
+    if (page.isFirst && headerImg) {
+      pdf.addImage(headerImg, 'PNG', 0, 0, PDF_WIDTH_MM, headerHeightMM);
+      yOffset = headerHeightMM + MARGIN_MM;
     }
+
+    const sliceCanvas = document.createElement('canvas');
+    sliceCanvas.width = page.sw;
+    sliceCanvas.height = page.sh;
+    const ctx = sliceCanvas.getContext('2d')!;
+    ctx.drawImage(canvas, page.sx, page.sy, page.sw, page.sh, 0, 0, page.sw, page.sh);
+
+    const sliceData = sliceCanvas.toDataURL('image/png');
+    const sliceWidthMM = page.sw / scale;
+    const sliceHeightMM = page.sh / scale;
+
+    pdf.addImage(sliceData, 'PNG', 0, yOffset, sliceWidthMM, sliceHeightMM);
   }
 
-  pdf.save(filename);
+  if (mode === 'save') {
+    pdf.save(filename || 'chart.pdf');
+  } else {
+    return pdf.output('blob');
+  }
+}
+
+export async function generateKundaliPDF(
+  element: HTMLElement,
+  filename: string = 'kundali.pdf'
+): Promise<void> {
+  await buildPDF(element, 'save', filename);
 }
 
 export async function generateKundaliPDFBlob(
   element: HTMLElement
 ): Promise<Blob> {
-  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-    import('jspdf'),
-    import('html2canvas'),
-  ]);
-
-  let headerImg: HTMLImageElement | null = null;
-  try {
-    headerImg = await loadImage(HEADER_IMAGE_PATH);
-  } catch {
-    // continue without header
-  }
-
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-  });
-
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pdfWidth = 210;
-  const pdfHeight = 297;
-
-  let currentY = 0;
-
-  if (headerImg) {
-    const headerHeight = (headerImg.height * pdfWidth) / headerImg.width;
-    pdf.addImage(headerImg, 'PNG', 0, 0, pdfWidth, headerHeight);
-    currentY = headerHeight + 5;
-  }
-
-  const contentWidth = pdfWidth;
-  const contentHeight = (canvas.height * contentWidth) / canvas.width;
-
-  if (currentY + contentHeight <= pdfHeight) {
-    pdf.addImage(imgData, 'PNG', 0, currentY, contentWidth, contentHeight);
-  } else {
-    let heightLeft = contentHeight;
-    pdf.addImage(imgData, 'PNG', 0, currentY, contentWidth, contentHeight);
-    heightLeft -= pdfHeight - currentY;
-
-    while (heightLeft > 0) {
-      pdf.addPage();
-      pdf.addImage(
-        imgData,
-        'PNG',
-        0,
-        -(contentHeight - heightLeft),
-        contentWidth,
-        contentHeight
-      );
-      heightLeft -= pdfHeight;
-    }
-  }
-
-  return pdf.output('blob');
-}
-
-export async function generateMatchmakingPDFBlob(
-  element: HTMLElement
-): Promise<Blob> {
-  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-    import('jspdf'),
-    import('html2canvas'),
-  ]);
-
-  let headerImg: HTMLImageElement | null = null;
-  try {
-    headerImg = await loadImage(HEADER_IMAGE_PATH);
-  } catch {
-    // continue without header
-  }
-
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-  });
-
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pdfWidth = 210;
-  const pdfHeight = 297;
-
-  let currentY = 0;
-
-  if (headerImg) {
-    const headerHeight = (headerImg.height * pdfWidth) / headerImg.width;
-    pdf.addImage(headerImg, 'PNG', 0, 0, pdfWidth, headerHeight);
-    currentY = headerHeight + 5;
-  }
-
-  const contentWidth = pdfWidth;
-  const contentHeight = (canvas.height * contentWidth) / canvas.width;
-
-  let heightLeft = contentHeight;
-  const position = currentY;
-
-  pdf.addImage(imgData, 'PNG', 0, position, contentWidth, contentHeight);
-  heightLeft -= pdfHeight - position;
-
-  while (heightLeft > 0) {
-    pdf.addPage();
-    const offset = contentHeight - heightLeft;
-    pdf.addImage(imgData, 'PNG', 0, -offset, contentWidth, contentHeight);
-    heightLeft -= pdfHeight;
-  }
-
-  return pdf.output('blob');
+  return (await buildPDF(element, 'blob')) as Blob;
 }
 
 export async function generateMatchmakingPDF(
   element: HTMLElement,
   filename: string = 'matchmaking.pdf'
 ): Promise<void> {
-  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-    import('jspdf'),
-    import('html2canvas'),
-  ]);
+  await buildPDF(element, 'save', filename);
+}
 
-  let headerImg: HTMLImageElement | null = null;
-  try {
-    headerImg = await loadImage(HEADER_IMAGE_PATH);
-  } catch {
-    // Header image failed to load - continue without it
-  }
-
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-  });
-
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pdfWidth = 210;
-  const pdfHeight = 297;
-
-  let currentY = 0;
-
-  // Add header if loaded
-  if (headerImg) {
-    const headerHeight = (headerImg.height * pdfWidth) / headerImg.width;
-    pdf.addImage(headerImg, 'PNG', 0, 0, pdfWidth, headerHeight);
-    currentY = headerHeight + 5; // 5mm padding
-  }
-
-  const contentWidth = pdfWidth;
-  const contentHeight = (canvas.height * contentWidth) / canvas.width;
-
-  // Multi-page handling
-  let heightLeft = contentHeight;
-  let position = currentY;
-
-  pdf.addImage(imgData, 'PNG', 0, position, contentWidth, contentHeight);
-  heightLeft -= (pdfHeight - position);
-
-  while (heightLeft > 0) {
-    position = heightLeft - contentHeight; // This logic from before seems flaky for offsets with headers
-    pdf.addPage();
-    // Simplified: Just put the image shifted up
-    // The previous logic was: position = heightLeft - imgHeight;
-    // Which means: Y = Remaining - TotalHeight. (Negative value).
-
-    // Correct logic for subsequent pages:
-    // We want to print the slice starting at (ContentHeight - HeighLeft)
-    // So we place the image at Y = -(ContentHeight - HeightLeft)
-    const offset = contentHeight - heightLeft;
-    pdf.addImage(imgData, 'PNG', 0, -offset, contentWidth, contentHeight);
-    heightLeft -= pdfHeight;
-  }
-
-  pdf.save(filename);
+export async function generateMatchmakingPDFBlob(
+  element: HTMLElement
+): Promise<Blob> {
+  return (await buildPDF(element, 'blob')) as Blob;
 }

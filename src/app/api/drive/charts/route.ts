@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  listChartFiles,
-  getFileContent,
-  uploadJSON,
-  uploadPDF,
-} from '@/lib/google-drive';
+  listChartBlobs,
+  getChartJSON,
+  uploadChartJSON,
+  uploadChartPDF,
+} from '@/lib/blob-storage';
 
 export async function GET() {
   try {
-    const files = await listChartFiles();
+    const blobs = await listChartBlobs();
 
     const charts = await Promise.all(
-      files.map(async (file) => {
+      blobs.map(async (blob) => {
         try {
-          const content = await getFileContent(file.id);
-          return JSON.parse(content);
+          return await getChartJSON(blob.url);
         } catch {
           return null;
         }
@@ -26,9 +25,10 @@ export async function GET() {
       data: charts.filter(Boolean),
     });
   } catch (error) {
-    console.error('Error listing charts:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error listing charts:', msg);
     return NextResponse.json(
-      { success: false, error: 'Failed to list charts from Drive' },
+      { success: false, error: `List failed: ${msg}` },
       { status: 500 }
     );
   }
@@ -57,29 +57,28 @@ export async function POST(request: NextRequest) {
     }
     chartData.updatedAt = new Date().toISOString();
 
-    const dataFilename = `chart_${chartId}.json`;
-    const dataFileId = await uploadJSON(dataFilename, chartData);
+    const dataUrl = await uploadChartJSON(chartId, chartData);
 
-    let pdfFileId: string | null = null;
+    let pdfUrl: string | null = null;
     if (pdfFile) {
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdfBuffer = Buffer.from(arrayBuffer);
-      const pdfFilename = `kundali_${chartData.personName || 'chart'}_${chartId}.pdf`;
-      pdfFileId = await uploadPDF(pdfFilename, pdfBuffer);
+      pdfUrl = await uploadChartPDF(
+        chartId,
+        chartData.personName || 'chart',
+        pdfBuffer
+      );
     }
 
     return NextResponse.json({
       success: true,
-      data: {
-        chartId,
-        dataFileId,
-        pdfFileId,
-      },
+      data: { chartId, dataUrl, pdfUrl },
     });
   } catch (error) {
-    console.error('Error saving chart:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error saving chart:', msg);
     return NextResponse.json(
-      { success: false, error: 'Failed to save chart to Drive' },
+      { success: false, error: `Save failed: ${msg}` },
       { status: 500 }
     );
   }

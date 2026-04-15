@@ -34,6 +34,8 @@ export async function fetchPanchang(
     karana: result.karana,
     vara: result.vara,
     masa: result.masa,
+    teluguMasa: result.teluguMasa,
+    samvatsara: result.samvatsara,
     paksha: result.paksha,
     sunrise: result.sunrise,
     sunset: result.sunset,

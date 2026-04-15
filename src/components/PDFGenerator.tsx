@@ -2,14 +2,11 @@
 
 import React, { useState } from 'react';
 import {
-  generateKundaliPDF,
   generateMatchmakingPDF,
-  generateKundaliPDFBlob,
   generateMatchmakingPDFBlob,
 } from '@/lib/pdf/generator';
 import { uploadPDFToDrive } from '@/lib/storage';
 import { Button } from './shared/Button';
-import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 
 interface PDFGeneratorProps {
   type: 'kundali' | 'matchmaking';
@@ -17,32 +14,25 @@ interface PDFGeneratorProps {
   filename?: string;
 }
 
-export function PDFGenerator({ type, elementId, filename }: PDFGeneratorProps) {
+export function PDFGenerator({ elementId, filename }: PDFGeneratorProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const handleSaveToDrive = async () => {
     const element = document.getElementById(elementId);
-    if (!element) {
-      alert('Element not found for PDF generation');
-      return;
-    }
+    if (!element) return;
 
     setSaving(true);
     try {
-      const blob =
-        type === 'kundali'
-          ? await generateKundaliPDFBlob(element)
-          : await generateMatchmakingPDFBlob(element);
-
-      const pdfFilename = filename || `${type}.pdf`;
+      const blob = await generateMatchmakingPDFBlob(element);
+      const pdfFilename = filename || 'matchmaking.pdf';
       await uploadPDFToDrive(pdfFilename, blob);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
-      console.error('Error saving PDF to Drive:', error);
-      alert('Failed to save PDF to Drive. Downloading locally instead.');
-      handleDownload();
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Error saving PDF:', msg);
+      alert(`Save failed: ${msg}`);
     } finally {
       setSaving(false);
     }
@@ -50,17 +40,10 @@ export function PDFGenerator({ type, elementId, filename }: PDFGeneratorProps) {
 
   const handleDownload = async () => {
     const element = document.getElementById(elementId);
-    if (!element) {
-      alert('Element not found for PDF generation');
-      return;
-    }
+    if (!element) return;
 
     try {
-      if (type === 'kundali') {
-        await generateKundaliPDF(element, filename || 'kundali.pdf');
-      } else {
-        await generateMatchmakingPDF(element, filename || 'matchmaking.pdf');
-      }
+      await generateMatchmakingPDF(element, filename || 'matchmaking.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF');
@@ -75,14 +58,10 @@ export function PDFGenerator({ type, elementId, filename }: PDFGeneratorProps) {
         isLoading={saving}
         disabled={saving}
       >
-        {saved
-          ? '✓ Saved to Drive'
-          : saving
-            ? 'Saving...'
-            : `${TELUGU_LABELS.kundali.downloadPDF} (Drive)`}
+        {saved ? '✓ Saved' : saving ? 'Saving...' : 'Save to Cloud'}
       </Button>
       <Button variant="outline" onClick={handleDownload}>
-        ↓ Local
+        ↓ Download PDF
       </Button>
     </div>
   );

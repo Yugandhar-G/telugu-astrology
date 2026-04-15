@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  listChartFiles,
-  getFileContent,
-  deleteFile,
-  findPDFForChart,
-} from '@/lib/google-drive';
+  listChartBlobs,
+  getChartJSON,
+  deleteChartBlob,
+} from '@/lib/blob-storage';
 
 export async function GET(
   _request: NextRequest,
@@ -12,24 +11,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const files = await listChartFiles();
-    const file = files.find((f) => f.name === `chart_${id}.json`);
+    const blobs = await listChartBlobs();
+    const blob = blobs.find((b) => b.pathname === `charts/${id}.json`);
 
-    if (!file) {
+    if (!blob) {
       return NextResponse.json(
         { success: false, error: 'Chart not found' },
         { status: 404 }
       );
     }
 
-    const content = await getFileContent(file.id);
-    const chartData = JSON.parse(content);
-
+    const chartData = await getChartJSON(blob.url);
     return NextResponse.json({ success: true, data: chartData });
   } catch (error) {
-    console.error('Error getting chart:', error);
+    const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: 'Failed to get chart from Drive' },
+      { success: false, error: `Get failed: ${msg}` },
       { status: 500 }
     );
   }
@@ -41,23 +38,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    const files = await listChartFiles();
-    const file = files.find((f) => f.name === `chart_${id}.json`);
-    if (file) {
-      await deleteFile(file.id);
-    }
-
-    const pdfFileId = await findPDFForChart(id);
-    if (pdfFileId) {
-      await deleteFile(pdfFileId);
-    }
-
+    await deleteChartBlob(id);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting chart:', error);
+    const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete chart from Drive' },
+      { success: false, error: `Delete failed: ${msg}` },
       { status: 500 }
     );
   }

@@ -9,10 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/blob": "^2.3.3",
     "astronomy-engine": "^2.1.19",
     "date-fns": "^3.6.0",
     "date-fns-tz": "^3.2.0",
-    "googleapis": "^171.4.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
     "next": "15.3.0",

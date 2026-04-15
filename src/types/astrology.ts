@@ -7,6 +7,8 @@ export interface PanchangData {
   yoga: string;
   karana: string;
   masa: string;
+  teluguMasa: string;
+  samvatsara: string;
   paksha: string;
   rahuKalam: {
     start: string;

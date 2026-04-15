@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadPDF } from '@/lib/google-drive';
+import { uploadMatchmakingPDF } from '@/lib/blob-storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,16 +16,17 @@ export async function POST(request: NextRequest) {
 
     const arrayBuffer = await pdfFile.arrayBuffer();
     const pdfBuffer = Buffer.from(arrayBuffer);
-    const fileId = await uploadPDF(filename, pdfBuffer);
+    const url = await uploadMatchmakingPDF(filename, pdfBuffer);
 
     return NextResponse.json({
       success: true,
-      data: { fileId },
+      data: { url },
     });
   } catch (error) {
-    console.error('Error uploading PDF:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error uploading PDF:', msg);
     return NextResponse.json(
-      { success: false, error: 'Failed to upload PDF to Drive' },
+      { success: false, error: `Upload failed: ${msg}` },
       { status: 500 }
     );
   }

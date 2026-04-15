@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findPDFForChart, getFileBuffer } from '@/lib/google-drive';
+import { getChartPDFUrl } from '@/lib/blob-storage';
 
 export async function GET(
   _request: NextRequest,
@@ -7,27 +7,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const pdfFileId = await findPDFForChart(id);
+    const pdfUrl = await getChartPDFUrl(id);
 
-    if (!pdfFileId) {
+    if (!pdfUrl) {
       return NextResponse.json(
         { success: false, error: 'PDF not found' },
         { status: 404 }
       );
     }
 
-    const buffer = await getFileBuffer(pdfFileId);
-
-    return new NextResponse(buffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="kundali_${id}.pdf"`,
-      },
-    });
+    return NextResponse.redirect(pdfUrl);
   } catch (error) {
-    console.error('Error getting PDF:', error);
+    const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: 'Failed to get PDF from Drive' },
+      { success: false, error: `PDF fetch failed: ${msg}` },
       { status: 500 }
     );
   }

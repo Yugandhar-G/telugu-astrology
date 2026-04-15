@@ -20,13 +20,13 @@ export function KundaliChart({ data, displayDate, sankalpam }: KundaliChartProps
   const dateToShow = displayDate || data.birthDate;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
       <h2 className="text-2xl font-bold mb-4 text-primary-600">
         <TeluguText>{TELUGU_LABELS.kundali.title}</TeluguText>
       </h2>
 
       <div className="mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <span className="text-gray-600">
               <TeluguText>{TELUGU_LABELS.kundali.name}</TeluguText>
@@ -76,7 +76,7 @@ export function KundaliChart({ data, displayDate, sankalpam }: KundaliChartProps
       )}
 
       {/* Summary Boxes moved up */}
-      <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-primary-50 p-4 rounded-lg">
           <span className="text-gray-600 block mb-1">
             <TeluguText>{TELUGU_LABELS.kundali.lagna}</TeluguText>
@@ -93,24 +93,7 @@ export function KundaliChart({ data, displayDate, sankalpam }: KundaliChartProps
             <TeluguText>{translateToTelugu(data.moonSign)}</TeluguText>
           </p>
         </div>
-        <div className="bg-primary-50 p-4 rounded-lg">
-          <span className="text-gray-600 block mb-1">
-            <TeluguText>నక్షత్ర పాదం</TeluguText>
-          </span>
-          {(() => {
-            const moon = planets.find(p => p.name === 'Moon');
-            if (moon && typeof moon.nakshatra === 'object') {
-              const info = findNakshatraByName(moon.nakshatra.name);
-              const syllable = info?.syllables[moon.nakshatra.padam - 1] || '';
-              return (
-                <p className="font-bold text-lg">
-                  <TeluguText>{`${translateToTelugu(moon.nakshatra.name)} ${moon.nakshatra.padam} ${syllable}`}</TeluguText>
-                </p>
-              );
-            }
-            return <p className="font-bold text-lg">-</p>;
-          })()}
-        </div>
+        <NakshatraPadamBox planets={planets} />
         <div className="bg-primary-50 p-4 rounded-lg">
           <span className="text-gray-600 block mb-1">
             <TeluguText>లగ్నాధిపతి</TeluguText>
@@ -135,17 +118,17 @@ export function KundaliChart({ data, displayDate, sankalpam }: KundaliChartProps
             {planets.map((planet) => (
               <div
                 key={planet.name}
-                className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                className="flex flex-wrap justify-between items-center p-2 sm:p-3 bg-gray-50 rounded-lg gap-1"
               >
-                <div>
-                  <span className="font-semibold">
+                <div className="min-w-0">
+                  <span className="font-semibold text-sm sm:text-base">
                     <TeluguText>{translateToTelugu(planet.name)}</TeluguText>
                   </span>
-                  <span className="text-gray-600 ml-2">
+                  <span className="text-gray-600 ml-1 text-xs sm:text-sm">
                     (<TeluguText>{translateToTelugu(planet.sign)}</TeluguText>, H{planet.house})
                   </span>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-xs sm:text-sm text-gray-600">
                   <TeluguText>
                     {typeof planet.nakshatra === 'object'
                       ? `${translateToTelugu(planet.nakshatra.name)} (${planet.nakshatra.padam})`
@@ -209,18 +192,18 @@ function NakshatraReferenceTable() {
                 {group.nakshatras.map((idx) => {
                   const n = NAKSHATRA_DATA[idx];
                   return (
-                    <div key={`${group.rashi}-${idx}`} className="px-4 py-3 flex items-center gap-4 bg-white">
-                      <div className="w-32 shrink-0">
-                        <span className="font-semibold text-gray-900 font-telugu">{n.teluguName}</span>
+                    <div key={`${group.rashi}-${idx}`} className="px-3 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2 sm:gap-4 bg-white">
+                      <div className="w-24 sm:w-32 shrink-0">
+                        <span className="font-semibold text-gray-900 font-telugu text-sm sm:text-base">{n.teluguName}</span>
                       </div>
-                      <div className="flex gap-1.5 flex-wrap">
+                      <div className="flex gap-1 sm:gap-1.5 flex-wrap">
                         {n.syllables.map((s, i) => (
-                          <span key={i} className="inline-block px-3 py-1 bg-orange-50 border border-orange-200 rounded-lg font-bold text-orange-900 font-telugu text-base">
+                          <span key={i} className="inline-block px-2 sm:px-3 py-0.5 sm:py-1 bg-orange-50 border border-orange-200 rounded-lg font-bold text-orange-900 font-telugu text-sm sm:text-base">
                             {s}
                           </span>
                         ))}
                       </div>
-                      <div className="ml-auto text-sm text-gray-500 font-telugu shrink-0">
+                      <div className="ml-auto text-xs sm:text-sm text-gray-500 font-telugu shrink-0">
                         {n.lord}
                       </div>
                     </div>
@@ -267,6 +250,27 @@ function NakshatraReferenceTable() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function NakshatraPadamBox({ planets }: { planets: KundaliData['planets'] }) {
+  const moon = planets.find(p => p.name === 'Moon');
+  let label = '-';
+  if (moon && typeof moon.nakshatra === 'object') {
+    const info = findNakshatraByName(moon.nakshatra.name);
+    const syllable = info ? info.syllables[moon.nakshatra.padam - 1] : '';
+    const teluguName = translateToTelugu(moon.nakshatra.name);
+    label = `${teluguName} ${moon.nakshatra.padam} ${syllable}`;
+  }
+  return (
+    <div className="bg-primary-50 p-4 rounded-lg">
+      <span className="text-gray-600 block mb-1">
+        <TeluguText>నక్షత్ర పాదం</TeluguText>
+      </span>
+      <p className="font-bold text-lg">
+        <TeluguText>{label}</TeluguText>
+      </p>
     </div>
   );
 }
