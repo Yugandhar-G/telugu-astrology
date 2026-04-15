@@ -1,4 +1,4 @@
-import { put, list, del, head } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 export async function uploadChartJSON(
   chartId: string,
