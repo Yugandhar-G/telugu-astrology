@@ -1,48 +1,34 @@
 import { SavedChart } from '@/types/user';
 import { KundaliData } from '@/types/astrology';
 
-export async function getDriveCharts(): Promise<SavedChart[]> {
-  const res = await fetch('/api/drive/charts');
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Failed to load charts');
-  return json.data as SavedChart[];
+const CHARTS_KEY = 'astrology_saved_charts';
+
+export function getSavedCharts(): SavedChart[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(CHARTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }
 
-export async function saveChartToDrive(
+export function saveChartLocally(
   personName: string,
   birthData: KundaliData & { sankalpam?: string },
-  chartType: 'kundali' | 'transit' | 'dasha' = 'kundali',
-  pdfBlob?: Blob
-): Promise<{ chartId: string; dataUrl: string; pdfUrl: string | null }> {
-  const chartId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  chartType: 'kundali' | 'transit' | 'dasha' = 'kundali'
+): void {
+  const charts = getSavedCharts();
   const now = new Date().toISOString();
-
-  const chartData: SavedChart = {
-    id: chartId,
+  charts.unshift({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     personName,
     birthData,
     chartType,
     createdAt: now,
     updatedAt: now,
-  };
-
-  const formData = new FormData();
-  formData.append('chartData', JSON.stringify(chartData));
-
-  if (pdfBlob) {
-    formData.append('pdf', pdfBlob, `kundali_${personName}_${chartId}.pdf`);
-  }
-
-  const res = await fetch('/api/drive/charts', { method: 'POST', body: formData });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Failed to save chart');
-  return json.data;
-}
-
-export async function deleteChartFromDrive(chartId: string): Promise<void> {
-  const res = await fetch(`/api/drive/charts/${chartId}`, { method: 'DELETE' });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Failed to delete chart');
+  });
+  localStorage.setItem(CHARTS_KEY, JSON.stringify(charts));
 }
 
 export async function uploadPDFToDrive(

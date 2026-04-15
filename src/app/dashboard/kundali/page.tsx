@@ -11,11 +11,10 @@ import { Button } from '@/components/shared/Button';
 import { Loading } from '@/components/shared/Loading';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 import { useAuth } from '@/context/AuthContext';
-import { saveChartToDrive } from '@/lib/storage';
+import { uploadPDFToDrive, saveChartLocally } from '@/lib/storage';
 import { generateKundaliPDFBlob, generateKundaliPDF } from '@/lib/pdf/generator';
 import { INDIAN_CITIES } from '@/lib/constants/cities';
 
-// Pre-compute city lookup map for O(1) lookup
 const cityMap = new Map(INDIAN_CITIES.map(c => [c.name.toLowerCase(), c]));
 
 export default function KundaliPage() {
@@ -32,14 +31,12 @@ export default function KundaliPage() {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [sankalpam, setSankalpam] = useState('');
 
-  // Memoize selected date to prevent re-renders
   const selectedBirthDate = useMemo(() => {
     if (!birthDate) return new Date();
     const [y, m, d] = birthDate.split('-').map(Number);
     return new Date(y, m - 1, d, 12, 0, 0);
   }, [birthDate]);
 
-  // Memoize date change handler
   const handleDateChange = useCallback((date: Date) => {
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -64,36 +61,27 @@ export default function KundaliPage() {
     });
   }
 
-  const [savingToDrive, setSavingToDrive] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     if (!data || !user) return;
 
-    setSavingToDrive(true);
-    try {
-      let pdfBlob: Blob | undefined;
-      try {
-        const chartEl = document.getElementById('kundali-chart');
-        if (chartEl) {
-          pdfBlob = await generateKundaliPDFBlob(chartEl);
-        }
-      } catch (pdfErr) {
-        console.warn('PDF generation failed, saving data only:', pdfErr);
-      }
+    const chartEl = document.getElementById('kundali-chart');
+    if (!chartEl) return;
 
-      await saveChartToDrive(
-        data.personName,
-        { ...data, sankalpam },
-        'kundali',
-        pdfBlob
-      );
-      alert(pdfBlob ? 'Chart & PDF saved!' : 'Chart data saved! (PDF skipped on this device)');
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
+    setSaving(true);
+    try {
+      const pdfBlob = await generateKundaliPDFBlob(chartEl);
+      const filename = `kundali_${data.personName}.pdf`;
+      await uploadPDFToDrive(filename, pdfBlob);
+      saveChartLocally(data.personName, { ...data, sankalpam }, 'kundali');
+      alert('PDF saved to cloud!');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       console.error('Save error:', msg);
       alert(`Save failed: ${msg}`);
     } finally {
-      setSavingToDrive(false);
+      setSaving(false);
     }
   }
 
@@ -151,7 +139,6 @@ export default function KundaliPage() {
                   const place = e.target.value;
                   setBirthPlace(place);
 
-                  // Auto-update coordinates if place matches a known city (O(1) lookup)
                   const city = cityMap.get(place.toLowerCase());
                   if (city) {
                     setLatitude(city.lat);
@@ -220,10 +207,10 @@ export default function KundaliPage() {
               <Button
                 variant="primary"
                 onClick={handleSave}
-                isLoading={savingToDrive}
-                disabled={savingToDrive}
+                isLoading={saving}
+                disabled={saving}
               >
-                {savingToDrive ? 'Saving...' : `${TELUGU_LABELS.kundali.save} (Cloud)`}
+                {saving ? 'Saving...' : `${TELUGU_LABELS.kundali.save} (Cloud)`}
               </Button>
             )}
             <Button

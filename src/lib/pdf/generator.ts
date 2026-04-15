@@ -17,7 +17,7 @@ const MARGIN_MM = 5;
 async function captureElement(element: HTMLElement) {
   const { default: html2canvas } = await import('html2canvas');
   return html2canvas(element, {
-    scale: 2,
+    scale: 1.5,
     useCORS: true,
     logging: false,
     scrollY: -window.scrollY,
@@ -111,11 +111,11 @@ async function buildPDF(
     const ctx = sliceCanvas.getContext('2d')!;
     ctx.drawImage(canvas, page.sx, page.sy, page.sw, page.sh, 0, 0, page.sw, page.sh);
 
-    const sliceData = sliceCanvas.toDataURL('image/png');
+    const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
     const sliceWidthMM = page.sw / scale;
     const sliceHeightMM = page.sh / scale;
 
-    pdf.addImage(sliceData, 'PNG', 0, yOffset, sliceWidthMM, sliceHeightMM);
+    pdf.addImage(sliceData, 'JPEG', 0, yOffset, sliceWidthMM, sliceHeightMM);
   }
 
   if (mode === 'save') {

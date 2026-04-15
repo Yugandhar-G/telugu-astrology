@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadMatchmakingPDF } from '@/lib/blob-storage';
+import { uploadPDF } from '@/lib/blob-storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     const arrayBuffer = await pdfFile.arrayBuffer();
     const pdfBuffer = Buffer.from(arrayBuffer);
-    const url = await uploadMatchmakingPDF(filename, pdfBuffer);
+    const url = await uploadPDF(filename, pdfBuffer);
 
     return NextResponse.json({
       success: true,
