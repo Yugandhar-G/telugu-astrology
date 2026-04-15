@@ -72,9 +72,13 @@ export default function KundaliPage() {
     setSavingToDrive(true);
     try {
       let pdfBlob: Blob | undefined;
-      const chartEl = document.getElementById('kundali-chart');
-      if (chartEl) {
-        pdfBlob = await generateKundaliPDFBlob(chartEl);
+      try {
+        const chartEl = document.getElementById('kundali-chart');
+        if (chartEl) {
+          pdfBlob = await generateKundaliPDFBlob(chartEl);
+        }
+      } catch (pdfErr) {
+        console.warn('PDF generation failed, saving data only:', pdfErr);
       }
 
       await saveChartToDrive(
@@ -83,10 +87,11 @@ export default function KundaliPage() {
         'kundali',
         pdfBlob
       );
-      alert('Chart & PDF saved to Google Drive!');
+      alert(pdfBlob ? 'Chart & PDF saved!' : 'Chart data saved! (PDF skipped on this device)');
     } catch (error) {
-      console.error('Error saving chart to Drive:', error);
-      alert('Failed to save chart to Drive');
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Save error:', msg);
+      alert(`Save failed: ${msg}`);
     } finally {
       setSavingToDrive(false);
     }
