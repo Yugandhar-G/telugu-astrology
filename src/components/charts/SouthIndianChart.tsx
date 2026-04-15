@@ -151,20 +151,27 @@ export function SouthIndianChart({ data, className = '' }: SouthIndianChartProps
                 `}
             </style>
             <svg viewBox="0 0 400 400" className={`w-full max-w-md mx-auto bg-white rounded-xl shadow-lg border border-orange-100 ${className}`}>
-                {/* Main Premium Border */}
-                <rect x="2" y="2" width="396" height="396" fill="none" stroke="#f6ad55" strokeWidth="3" rx="8" />
+                {/* Outer border */}
+                <rect x="2" y="2" width="396" height="396" fill="none" stroke="#c05621" strokeWidth="3" rx="8" />
 
-                {/* Grid Lines - Outer Box */}
-                <line x1="0" y1="100" x2="400" y2="100" stroke="#fbd38d" strokeWidth="2" />
-                <line x1="0" y1="300" x2="400" y2="300" stroke="#fbd38d" strokeWidth="2" />
-                <line x1="100" y1="0" x2="100" y2="400" stroke="#fbd38d" strokeWidth="2" />
-                <line x1="300" y1="0" x2="300" y2="400" stroke="#fbd38d" strokeWidth="2" />
+                {/* Full-span horizontal lines */}
+                <line x1="2" y1="100" x2="398" y2="100" stroke="#dd6b20" strokeWidth="1.5" />
+                <line x1="2" y1="300" x2="398" y2="300" stroke="#dd6b20" strokeWidth="1.5" />
 
-                {/* Inner Lines for center */}
-                <line x1="100" y1="100" x2="100" y2="300" stroke="#fbd38d" strokeWidth="2" />
-                <line x1="100" y1="100" x2="300" y2="100" stroke="#fbd38d" strokeWidth="2" />
-                <line x1="300" y1="100" x2="300" y2="300" stroke="#fbd38d" strokeWidth="2" />
-                <line x1="100" y1="300" x2="300" y2="300" stroke="#fbd38d" strokeWidth="2" />
+                {/* Full-span vertical lines */}
+                <line x1="100" y1="2" x2="100" y2="398" stroke="#dd6b20" strokeWidth="1.5" />
+                <line x1="300" y1="2" x2="300" y2="398" stroke="#dd6b20" strokeWidth="1.5" />
+
+                {/* Partial vertical line at x=200 (top row & bottom row only) */}
+                <line x1="200" y1="2" x2="200" y2="100" stroke="#dd6b20" strokeWidth="1.5" />
+                <line x1="200" y1="300" x2="200" y2="398" stroke="#dd6b20" strokeWidth="1.5" />
+
+                {/* Partial horizontal line at y=200 (left col & right col only) */}
+                <line x1="2" y1="200" x2="100" y2="200" stroke="#dd6b20" strokeWidth="1.5" />
+                <line x1="300" y1="200" x2="398" y2="200" stroke="#dd6b20" strokeWidth="1.5" />
+
+                {/* Center box inner border */}
+                <rect x="100" y="100" width="200" height="200" fill="none" stroke="#dd6b20" strokeWidth="1.5" />
 
                 {/* Cells */}
                 {[0, 1, 2, 3].map(r =>

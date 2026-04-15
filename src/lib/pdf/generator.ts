@@ -82,6 +82,120 @@ export async function generateKundaliPDF(
   pdf.save(filename);
 }
 
+export async function generateKundaliPDFBlob(
+  element: HTMLElement
+): Promise<Blob> {
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
+
+  let headerImg: HTMLImageElement | null = null;
+  try {
+    headerImg = await loadImage(HEADER_IMAGE_PATH);
+  } catch {
+    // continue without header
+  }
+
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+  });
+
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pdfWidth = 210;
+  const pdfHeight = 297;
+
+  let currentY = 0;
+
+  if (headerImg) {
+    const headerHeight = (headerImg.height * pdfWidth) / headerImg.width;
+    pdf.addImage(headerImg, 'PNG', 0, 0, pdfWidth, headerHeight);
+    currentY = headerHeight + 5;
+  }
+
+  const contentWidth = pdfWidth;
+  const contentHeight = (canvas.height * contentWidth) / canvas.width;
+
+  if (currentY + contentHeight <= pdfHeight) {
+    pdf.addImage(imgData, 'PNG', 0, currentY, contentWidth, contentHeight);
+  } else {
+    let heightLeft = contentHeight;
+    pdf.addImage(imgData, 'PNG', 0, currentY, contentWidth, contentHeight);
+    heightLeft -= pdfHeight - currentY;
+
+    while (heightLeft > 0) {
+      pdf.addPage();
+      pdf.addImage(
+        imgData,
+        'PNG',
+        0,
+        -(contentHeight - heightLeft),
+        contentWidth,
+        contentHeight
+      );
+      heightLeft -= pdfHeight;
+    }
+  }
+
+  return pdf.output('blob');
+}
+
+export async function generateMatchmakingPDFBlob(
+  element: HTMLElement
+): Promise<Blob> {
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
+
+  let headerImg: HTMLImageElement | null = null;
+  try {
+    headerImg = await loadImage(HEADER_IMAGE_PATH);
+  } catch {
+    // continue without header
+  }
+
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+  });
+
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pdfWidth = 210;
+  const pdfHeight = 297;
+
+  let currentY = 0;
+
+  if (headerImg) {
+    const headerHeight = (headerImg.height * pdfWidth) / headerImg.width;
+    pdf.addImage(headerImg, 'PNG', 0, 0, pdfWidth, headerHeight);
+    currentY = headerHeight + 5;
+  }
+
+  const contentWidth = pdfWidth;
+  const contentHeight = (canvas.height * contentWidth) / canvas.width;
+
+  let heightLeft = contentHeight;
+  const position = currentY;
+
+  pdf.addImage(imgData, 'PNG', 0, position, contentWidth, contentHeight);
+  heightLeft -= pdfHeight - position;
+
+  while (heightLeft > 0) {
+    pdf.addPage();
+    const offset = contentHeight - heightLeft;
+    pdf.addImage(imgData, 'PNG', 0, -offset, contentWidth, contentHeight);
+    heightLeft -= pdfHeight;
+  }
+
+  return pdf.output('blob');
+}
+
 export async function generateMatchmakingPDF(
   element: HTMLElement,
   filename: string = 'matchmaking.pdf'

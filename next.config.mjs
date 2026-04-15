@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ['astronomy-engine'],
+  serverExternalPackages: ['astronomy-engine', 'googleapis'],
   images: {
     remotePatterns: [],
   },

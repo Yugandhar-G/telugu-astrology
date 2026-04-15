@@ -12,7 +12,8 @@ import { Button } from '@/components/shared/Button';
 import { Loading } from '@/components/shared/Loading';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 import { useAuth } from '@/context/AuthContext';
-import { saveChart } from '@/lib/storage';
+import { saveChartToDrive } from '@/lib/storage';
+import { generateKundaliPDFBlob } from '@/lib/pdf/generator';
 import { INDIAN_CITIES } from '@/lib/constants/cities';
 
 // Pre-compute city lookup map for O(1) lookup
@@ -64,15 +65,31 @@ export default function KundaliPage() {
     });
   }
 
-  function handleSave() {
+  const [savingToDrive, setSavingToDrive] = useState(false);
+
+  async function handleSave() {
     if (!data || !user) return;
 
+    setSavingToDrive(true);
     try {
-      saveChart(data.personName, { ...data, sankalpam }, 'kundali');
-      alert('Chart saved successfully!');
+      let pdfBlob: Blob | undefined;
+      const chartEl = document.getElementById('kundali-chart');
+      if (chartEl) {
+        pdfBlob = await generateKundaliPDFBlob(chartEl);
+      }
+
+      await saveChartToDrive(
+        data.personName,
+        { ...data, sankalpam },
+        'kundali',
+        pdfBlob
+      );
+      alert('Chart & PDF saved to Google Drive!');
     } catch (error) {
-      console.error('Error saving chart:', error);
-      alert('Failed to save chart');
+      console.error('Error saving chart to Drive:', error);
+      alert('Failed to save chart to Drive');
+    } finally {
+      setSavingToDrive(false);
     }
   }
 
@@ -196,8 +213,13 @@ export default function KundaliPage() {
         <div>
           <div className="mb-4 flex space-x-2">
             {user && (
-              <Button variant="secondary" onClick={handleSave}>
-                {TELUGU_LABELS.kundali.save}
+              <Button
+                variant="secondary"
+                onClick={handleSave}
+                isLoading={savingToDrive}
+                disabled={savingToDrive}
+              >
+                {savingToDrive ? 'Saving to Drive...' : TELUGU_LABELS.kundali.save}
               </Button>
             )}
             <PDFGenerator type="kundali" elementId="kundali-chart" filename={`kundali_${data.personName}.pdf`} />

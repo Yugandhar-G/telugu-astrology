@@ -1,7 +1,13 @@
 'use client';
 
-import React from 'react';
-import { generateKundaliPDF, generateMatchmakingPDF } from '@/lib/pdf/generator';
+import React, { useState } from 'react';
+import {
+  generateKundaliPDF,
+  generateMatchmakingPDF,
+  generateKundaliPDFBlob,
+  generateMatchmakingPDFBlob,
+} from '@/lib/pdf/generator';
+import { uploadPDFToDrive } from '@/lib/storage';
 import { Button } from './shared/Button';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 
@@ -12,6 +18,36 @@ interface PDFGeneratorProps {
 }
 
 export function PDFGenerator({ type, elementId, filename }: PDFGeneratorProps) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleSaveToDrive = async () => {
+    const element = document.getElementById(elementId);
+    if (!element) {
+      alert('Element not found for PDF generation');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const blob =
+        type === 'kundali'
+          ? await generateKundaliPDFBlob(element)
+          : await generateMatchmakingPDFBlob(element);
+
+      const pdfFilename = filename || `${type}.pdf`;
+      await uploadPDFToDrive(pdfFilename, blob);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving PDF to Drive:', error);
+      alert('Failed to save PDF to Drive. Downloading locally instead.');
+      handleDownload();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDownload = async () => {
     const element = document.getElementById(elementId);
     if (!element) {
@@ -32,8 +68,22 @@ export function PDFGenerator({ type, elementId, filename }: PDFGeneratorProps) {
   };
 
   return (
-    <Button variant="primary" onClick={handleDownload}>
-      {TELUGU_LABELS.kundali.downloadPDF}
-    </Button>
+    <div className="flex space-x-2">
+      <Button
+        variant="primary"
+        onClick={handleSaveToDrive}
+        isLoading={saving}
+        disabled={saving}
+      >
+        {saved
+          ? '✓ Saved to Drive'
+          : saving
+            ? 'Saving...'
+            : `${TELUGU_LABELS.kundali.downloadPDF} (Drive)`}
+      </Button>
+      <Button variant="outline" onClick={handleDownload}>
+        ↓ Local
+      </Button>
+    </div>
   );
 }

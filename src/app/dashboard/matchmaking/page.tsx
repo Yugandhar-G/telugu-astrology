@@ -9,7 +9,7 @@ import { Loading } from '@/components/shared/Loading';
 import { TELUGU_LABELS } from '@/lib/constants/telugu-labels';
 import { SavedChart } from '@/types/user';
 import { MatchmakingData } from '@/types/astrology';
-import { getSavedCharts } from '@/lib/storage';
+import { getDriveCharts } from '@/lib/storage';
 
 export default function MatchmakingPage() {
   const { user } = useAuth();
@@ -17,6 +17,7 @@ export default function MatchmakingPage() {
   const [person1Id, setPerson1Id] = useState<string>('');
   const [person2Id, setPerson2Id] = useState<string>('');
   const [matchmakingData, setMatchmakingData] = useState<MatchmakingData | null>(null);
+  const [chartsLoading, setChartsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,11 +27,15 @@ export default function MatchmakingPage() {
     }
   }, [user]);
 
-  function loadSavedCharts() {
+  async function loadSavedCharts() {
+    setChartsLoading(true);
     try {
-      setSavedCharts(getSavedCharts());
-    } catch (error) {
-      console.error('Error loading saved charts:', error);
+      const charts = await getDriveCharts();
+      setSavedCharts(charts);
+    } catch (err) {
+      console.error('Error loading saved charts from Drive:', err);
+    } finally {
+      setChartsLoading(false);
     }
   }
 
@@ -83,7 +88,9 @@ export default function MatchmakingPage() {
         <span className="font-telugu">{TELUGU_LABELS.matchmaking.title}</span>
       </h1>
 
-      {savedCharts.length === 0 ? (
+      {chartsLoading ? (
+        <Loading text="Loading charts from Drive..." />
+      ) : savedCharts.length === 0 ? (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
           <p>No saved charts found. Please create and save kundalis first.</p>
         </div>
