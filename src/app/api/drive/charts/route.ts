@@ -8,8 +8,8 @@ export async function GET() {
     const pdfs = result.blobs
       .filter((b) => b.pathname.endsWith('.pdf'))
       .map((b) => {
-        const name = b.pathname
-          .replace('pdfs/', '')
+        const basename = b.pathname.split('/').pop() || '';
+        const name = basename
           .replace('.pdf', '')
           .replace(/^kundali_/, '')
           .replace(/^matchmaking_/, '');
@@ -17,8 +17,8 @@ export async function GET() {
         return {
           url: b.url,
           pathname: b.pathname,
-          name,
-          uploadedAt: b.uploadedAt,
+          name: name || basename,
+          uploadedAt: b.uploadedAt.toISOString(),
           size: b.size,
         };
       })
