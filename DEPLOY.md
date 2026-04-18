@@ -3,34 +3,25 @@
 ## Prerequisites
 
 1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
-2. **Supabase Account**: Sign up at [supabase.com](https://supabase.com)
-3. **VedAstro API Key**: Get from [vedastro.org](https://vedastro.org)
-4. **GitHub Account**: For version control (optional but recommended)
+2. **Vercel Blob Store**: Created from the Vercel project's Storage tab (provides `BLOB_READ_WRITE_TOKEN`)
+3. **GitHub Account**: For version control (optional but recommended)
 
-## Step 1: Set Up Supabase
+## Step 1: Set Up Vercel Blob
 
-1. Create a new project in Supabase
-2. Go to Settings → API and copy:
-   - Project URL
-   - Anon/Public Key
-   - Service Role Key (keep secret!)
-3. Go to SQL Editor and run the migration script (see README.md)
-4. Enable Row Level Security (RLS) on all tables
+1. In the Vercel dashboard, open your project
+2. Go to **Storage** → **Create Store** → **Blob**
+3. Connect the store to the project — Vercel will automatically inject `BLOB_READ_WRITE_TOKEN` into the project's environment variables
+4. For local development, copy that token into `.env.local` (see `.env.example`)
 
 ## Step 2: Set Up Environment Variables
 
 Create a `.env.local` file in your project root:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_KEY=your-service-key
-NEXT_PUBLIC_VEDASTRO_API_URL=https://api.vedastro.com
-VEDASTRO_API_KEY=your-vedastro-api-key
-NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
-NEXT_PUBLIC_APP_NAME=Telugu Astrology
-NEXT_PUBLIC_SUPPORT_EMAIL=your-email@example.com
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxx
 ```
+
+That is the only required variable. All astrological calculations (Panchang, Kundali, Matchmaking) run locally via `astronomy-engine` — no external API keys are needed.
 
 ## Step 3: Deploy to Vercel
 
@@ -47,9 +38,7 @@ NEXT_PUBLIC_SUPPORT_EMAIL=your-email@example.com
 
 2. Go to [vercel.com](https://vercel.com) and click "New Project"
 3. Import your GitHub repository
-4. Add environment variables in Vercel dashboard:
-   - Go to Project Settings → Environment Variables
-   - Add all variables from `.env.local`
+4. The Blob store created in Step 1 will already have provisioned `BLOB_READ_WRITE_TOKEN` — verify it appears under Project Settings → Environment Variables
 5. Click "Deploy"
 
 ### Option B: Via Vercel CLI
@@ -60,7 +49,7 @@ vercel login
 vercel
 ```
 
-Follow the prompts and add environment variables when asked.
+Follow the prompts.
 
 ## Step 4: Configure PWA
 
@@ -87,31 +76,22 @@ Follow the prompts and add environment variables when asked.
 
 ## Step 6: Post-Deployment Checklist
 
-- [ ] Test authentication (signup/login)
-- [ ] Test Panchang API calls
-- [ ] Test Kundali generation
-- [ ] Test Matchmaking calculation
-- [ ] Test PDF generation
-- [ ] Test saved charts functionality
+- [ ] Panchang loads and shows Samvatsara, Masa, Tithi, Nakshatra, etc.
+- [ ] Kundali generation works
+- [ ] Matchmaking calculation works
+- [ ] PDF generation works
+- [ ] Saved charts page lists PDFs from Vercel Blob and opens them on tap
 - [ ] Verify PWA installation works
 - [ ] Check mobile responsiveness
-- [ ] Test offline functionality
-- [ ] Monitor error logs in Vercel dashboard
+- [ ] Monitor function logs in Vercel dashboard
 
 ## Troubleshooting
 
-### API Errors
+### Save / Upload Errors
 
-- Check environment variables are set correctly
-- Verify Supabase RLS policies are configured
-- Check VedAstro API key is valid
-- Review Vercel function logs
-
-### Authentication Issues
-
-- Ensure Supabase auth is enabled
-- Check redirect URLs in Supabase dashboard
-- Verify cookies are being set correctly
+- Verify `BLOB_READ_WRITE_TOKEN` is set in Vercel project env vars
+- Check Vercel function logs for `/api/drive/upload-pdf` and `/api/drive/charts`
+- Confirm the generated PDF is under Vercel's 4.5 MB request body limit (PDFs are compressed at scale 1.5 / JPEG q=0.85)
 
 ### PWA Issues
 
@@ -123,5 +103,5 @@ Follow the prompts and add environment variables when asked.
 
 For issues, check:
 - [Next.js Docs](https://nextjs.org/docs)
-- [Supabase Docs](https://supabase.com/docs)
+- [Vercel Blob Docs](https://vercel.com/docs/storage/vercel-blob)
 - [Vercel Docs](https://vercel.com/docs)

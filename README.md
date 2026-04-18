@@ -2,7 +2,7 @@
 
 ## 📋 Project Overview
 
-A free, open-architecture **Telugu astrology web application** featuring daily Panchang, Kundali generation, matchmaking, and PDF downloads. Built with Next.js, deployed on Vercel, with Supabase for user data, and packaged for Android via PWABuilder.
+A free, open-architecture **Telugu astrology web application** featuring daily Panchang, Kundali generation, matchmaking, and PDF downloads. Built with Next.js, deployed on Vercel, with Vercel Blob for storing generated PDFs, and packaged for Android via PWABuilder.
 
 **Target Users**: Telugu-speaking astrology enthusiasts in India and diaspora  
 **Monetization**: Ad-supported or freemium (premium Matchmaking reports)  
@@ -17,23 +17,22 @@ A free, open-architecture **Telugu astrology web application** featuring daily P
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                  FRONTEND LAYER                         │
-│  Next.js 14 (React) + Tailwind CSS + PWA + TypeScript   │
+│  Next.js 15 (React) + Tailwind CSS + PWA + TypeScript   │
 │  Deployed: Vercel (Global CDN)                          │
 └────────────────┬────────────────────────────────────────┘
                  │
-    ┌────────────┼────────────┐
-    │            │            │
-┌───▼───┐  ┌────▼────┐  ┌────▼────┐
-│Supabase│  │VedAstro │  │jsPDF    │
-│Auth+DB │  │API      │  │PDF Gen  │
-└────────┘  └─────────┘  └─────────┘
-    │            │            │
-    └────────────┼────────────┘
-                 │
-        ┌────────▼────────┐
-        │  PWABuilder     │
-        │  (Android APK)  │
-        └─────────────────┘
+    ┌────────────┼─────────────────┐
+    │            │                 │
+┌───▼─────┐ ┌────▼─────────┐ ┌─────▼──────┐
+│ Vercel  │ │ astronomy-   │ │ html2canvas│
+│  Blob   │ │ engine (local│ │  + jsPDF   │
+│ (PDFs)  │ │ Vedic math)  │ │ (PDF gen)  │
+└─────────┘ └──────────────┘ └────────────┘
+    │
+┌───▼─────────────┐
+│  PWABuilder     │
+│  (Android APK)  │
+└─────────────────┘
 ```
 
 ### Free Resource Breakdown
@@ -41,9 +40,9 @@ A free, open-architecture **Telugu astrology web application** featuring daily P
 | Service | Free Tier | Limit | Purpose |
 |---------|-----------|-------|---------|
 | Vercel | 100 GB bandwidth/mo | Deploy Next.js app + serverless functions | Web hosting & API |
-| Supabase | 500 MB DB + 2 GB bandwidth | PostgreSQL database | Store user profiles & saved kundalis |
-| VedAstro | Public API | Call limits (~1000/day) | Panchang, Kundali, Matchmaking calculations |
-| jsPDF | Open source | Unlimited | Generate PDFs client-side (free) |
+| Vercel Blob | 1 GB storage (Hobby) | Object storage with public URLs | Store generated Kundali / Matchmaking PDFs |
+| astronomy-engine | Open source | Unlimited | Local Panchang, Kundali, Matchmaking calculations |
+| jsPDF + html2canvas | Open source | Unlimited | Generate PDFs client-side |
 | PWABuilder | Free tool | Unlimited | Convert web URL to Android APK |
 | GitHub | Public repo | Unlimited | Version control + GitHub Actions (free CI/CD) |
 
@@ -56,9 +55,7 @@ A free, open-architecture **Telugu astrology web application** featuring daily P
 - **Node.js** 18+ (or 20 LTS)
 - **npm** or **yarn**
 - **Git** for version control
-- **Supabase account** (free tier)
-- **VedAstro API key** (free API access)
-- **Vercel account** (for deployment, free tier)
+- **Vercel account** with a Blob store (free tier — provides `BLOB_READ_WRITE_TOKEN`)
 
 ### Installation
 
@@ -108,8 +105,7 @@ telugu-astrology-app/
 
 ## 🔐 Security Checklist
 
-- [x] **Secrets**: Store API keys in `.env.local` (never in code)
-- [x] **Auth**: Use Supabase JWT + RLS policies
+- [x] **Secrets**: Store tokens in `.env.local` (never in code)
 - [x] **HTTPS**: Vercel auto-enables SSL
 - [x] **Input Validation**: Sanitize user inputs
 - [ ] **Rate Limiting**: Add rate limits to API routes
