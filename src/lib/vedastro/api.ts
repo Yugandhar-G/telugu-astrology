@@ -9,7 +9,7 @@ import {
   VedAstroMatchmakingResponse,
 } from '@/types/api';
 import { calculatePanchang, calculateKundali, calculateMatchmaking } from '../vedic-math';
-import { resolveTimezoneOffset } from '../utils/timezone';
+import { resolveTimezoneOffset, getTimezoneFromCoords } from '../utils/timezone';
 
 export async function fetchPanchang(
   request: PanchangRequest
@@ -17,14 +17,18 @@ export async function fetchPanchang(
   const dateParts = request.date.split('-').map(Number);
   const hour = 12;
 
+  // Always derive timezone from coordinates so the calculation is correct
+  // for any location worldwide, regardless of what the client passed.
+  const resolvedTz = getTimezoneFromCoords(request.latitude, request.longitude);
+
   const date = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], hour, 0));
-  const tzOffset = resolveTimezoneOffset(request.timezone || '+05:30');
+  const tzOffset = resolveTimezoneOffset(resolvedTz, date);
   date.setMinutes(date.getMinutes() - (tzOffset * 60));
 
   const result = calculatePanchang(date, {
     latitude: request.latitude,
     longitude: request.longitude,
-    timezone: request.timezone,
+    timezone: resolvedTz,
   });
 
   return {
@@ -52,14 +56,20 @@ export async function fetchKundali(
   const dateParts = request.birthDate.split('-').map(Number);
   const timeParts = request.birthTime.split(':').map(Number);
 
+  // Derive the IANA timezone from the birth location itself. Using the user's
+  // app default (e.g. IST) for an overseas birth produces a wrong UTC instant
+  // and a wrong Lagnam. The historic DST offset is then resolved with
+  // resolveTimezoneOffset against the actual birth moment.
+  const resolvedTz = getTimezoneFromCoords(request.latitude, request.longitude);
+
   const date = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]));
-  const tzOffset = resolveTimezoneOffset(request.timezone || '+05:30');
+  const tzOffset = resolveTimezoneOffset(resolvedTz, date);
   date.setMinutes(date.getMinutes() - (tzOffset * 60));
 
   const result = calculateKundali(date, {
     latitude: request.latitude,
     longitude: request.longitude,
-    timezone: request.timezone,
+    timezone: resolvedTz,
   });
 
   return result;
@@ -68,28 +78,29 @@ export async function fetchKundali(
 export async function fetchMatchmaking(
   request: MatchmakingRequest
 ): Promise<VedAstroMatchmakingResponse> {
-  const buildDate = (person: { birthDate: string; birthTime: string; timezone?: string }) => {
+  const buildDate = (person: { birthDate: string; birthTime: string; latitude: number; longitude: number }) => {
     const dp = person.birthDate.split('-').map(Number);
     const tp = person.birthTime.split(':').map(Number);
     const d = new Date(Date.UTC(dp[0], dp[1] - 1, dp[2], tp[0], tp[1]));
-    const offset = resolveTimezoneOffset(person.timezone || '+05:30');
+    const tz = getTimezoneFromCoords(person.latitude, person.longitude);
+    const offset = resolveTimezoneOffset(tz, d);
     d.setMinutes(d.getMinutes() - (offset * 60));
-    return d;
+    return { date: d, tz };
   };
 
-  const person1Date = buildDate(request.person1);
-  const person2Date = buildDate(request.person2);
+  const p1 = buildDate(request.person1);
+  const p2 = buildDate(request.person2);
 
-  const kundali1 = calculateKundali(person1Date, {
+  const kundali1 = calculateKundali(p1.date, {
     latitude: request.person1.latitude,
     longitude: request.person1.longitude,
-    timezone: request.person1.timezone,
+    timezone: p1.tz,
   });
 
-  const kundali2 = calculateKundali(person2Date, {
+  const kundali2 = calculateKundali(p2.date, {
     latitude: request.person2.latitude,
     longitude: request.person2.longitude,
-    timezone: request.person2.timezone,
+    timezone: p2.tz,
   });
 
   const moon1 = kundali1.planets.find(p => p.name === 'Moon');

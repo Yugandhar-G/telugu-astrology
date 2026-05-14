@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchKundali } from '@/lib/vedastro/api';
 import { transformKundaliResponse } from '@/lib/vedastro/transformers';
+import { getTimezoneFromCoords } from '@/lib/utils/timezone';
 import { ApiResponse } from '@/types/api';
 
 export async function POST(request: NextRequest) {
@@ -13,7 +14,6 @@ export async function POST(request: NextRequest) {
       birthPlace,
       latitude,
       longitude,
-      timezone = 'Asia/Kolkata',
     } = body;
 
     if (!name || !birthDate || !birthTime || latitude === undefined || longitude === undefined) {
@@ -39,13 +39,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Always resolve timezone from the birth coordinates so overseas births
+    // (where the user's app default is IST) get the correct Lagnam.
+    const resolvedTimezone = getTimezoneFromCoords(lat, lng);
+
     const response = await fetchKundali({
       name,
       birthDate,
       birthTime,
       latitude: lat,
       longitude: lng,
-      timezone,
+      timezone: resolvedTimezone,
     });
 
     const transformedData = transformKundaliResponse(
@@ -56,7 +60,7 @@ export async function POST(request: NextRequest) {
       birthPlace || 'Unknown',
       lat,
       lng,
-      timezone
+      resolvedTimezone
     );
 
     return NextResponse.json<ApiResponse<typeof transformedData>>({

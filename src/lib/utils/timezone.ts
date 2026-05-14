@@ -1,3 +1,17 @@
+import tzlookup from 'tz-lookup';
+
+/**
+ * Resolves IANA timezone name from latitude/longitude.
+ * Falls back to 'Asia/Kolkata' on invalid input.
+ */
+export function getTimezoneFromCoords(latitude: number, longitude: number): string {
+    try {
+        return tzlookup(latitude, longitude);
+    } catch {
+        return 'Asia/Kolkata';
+    }
+}
+
 /**
  * Resolves any timezone identifier to a numeric UTC offset in hours.
  * Supports IANA names (e.g. 'America/New_York'), ±HH:MM strings, and abbreviations.

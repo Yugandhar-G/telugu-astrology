@@ -1,4 +1,4 @@
-import { put, list } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 export async function uploadPDF(
   filename: string,
@@ -24,4 +24,8 @@ export async function listPDFs(): Promise<
       uploadedAt: b.uploadedAt,
       size: b.size,
     }));
+}
+
+export async function deletePDF(urlOrPathname: string): Promise<void> {
+  await del(urlOrPathname);
 }

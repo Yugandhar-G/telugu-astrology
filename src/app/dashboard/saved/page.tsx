@@ -19,6 +19,7 @@ export default function SavedChartsPage() {
   const [pdfs, setPdfs] = useState<SavedPDF[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingUrl, setDeletingUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -41,6 +42,33 @@ export default function SavedChartsPage() {
       setError(msg);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete(pdf: SavedPDF) {
+    if (deletingUrl) return;
+    const confirmed = window.confirm(`Delete "${pdf.name}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeletingUrl(pdf.url);
+    setError(null);
+    const previous = pdfs;
+    setPdfs((current) => current.filter((p) => p.url !== pdf.url));
+
+    try {
+      const res = await fetch('/api/drive/charts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: pdf.url }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Delete failed');
+    } catch (err) {
+      setPdfs(previous);
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Could not delete: ${msg}`);
+    } finally {
+      setDeletingUrl(null);
     }
   }
 
@@ -72,32 +100,51 @@ export default function SavedChartsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pdfs.map((pdf) => (
-            <div
-              key={pdf.url}
-              className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => window.open(pdf.url, '_blank')}
-            >
-              <h3 className="text-lg font-semibold text-gray-900 truncate">
-                {pdf.name}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {new Date(pdf.uploadedAt).toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                {(pdf.size / 1024).toFixed(0)} KB
-              </p>
-              <p className="text-xs text-primary-600 mt-2">
-                Tap to open PDF
-              </p>
-            </div>
-          ))}
+          {pdfs.map((pdf) => {
+            const isDeleting = deletingUrl === pdf.url;
+            return (
+              <div
+                key={pdf.url}
+                className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow flex flex-col"
+              >
+                <button
+                  type="button"
+                  onClick={() => window.open(pdf.url, '_blank')}
+                  className="text-left flex-1"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 truncate">
+                    {pdf.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {new Date(pdf.uploadedAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {(pdf.size / 1024).toFixed(0)} KB
+                  </p>
+                  <p className="text-xs text-primary-600 mt-2">
+                    Tap to open PDF
+                  </p>
+                </button>
+
+                <div className="mt-3 flex justify-end border-t pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(pdf)}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? 'Deleting…' : 'Delete'}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

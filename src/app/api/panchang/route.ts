@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchPanchang } from '@/lib/vedastro/api';
 import { transformPanchangResponse } from '@/lib/vedastro/transformers';
+import { getTimezoneFromCoords } from '@/lib/utils/timezone';
 import { ApiResponse } from '@/types/api';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,6 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
-    const timezone = searchParams.get('timezone') || 'Asia/Kolkata';
 
     if (!date || !lat || !lng) {
       return NextResponse.json<ApiResponse<null>>(
@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const timezone = getTimezoneFromCoords(latitude, longitude);
 
     const response = await fetchPanchang({
       date,

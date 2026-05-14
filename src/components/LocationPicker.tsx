@@ -32,6 +32,27 @@ export function LocationPicker({
   const [lat, setLat] = useState(defaultLat?.toString() || userLocation.latitude.toString());
   const [lng, setLng] = useState(defaultLng?.toString() || userLocation.longitude.toString());
   const [selectedPlace, setSelectedPlace] = useState(defaultPlace || userLocation.place);
+  const [detectedTz, setDetectedTz] = useState<{ timezone: string; offsetLabel: string } | null>(null);
+
+  useEffect(() => {
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+    if (isNaN(latNum) || isNaN(lngNum)) return;
+
+    const controller = new AbortController();
+    fetch(`/api/timezone?lat=${latNum}&lng=${lngNum}`, { signal: controller.signal })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          setDetectedTz({ timezone: json.data.timezone, offsetLabel: json.data.offsetLabel });
+        }
+      })
+      .catch(() => {
+        // ignore aborts and network errors; UX hint only
+      });
+
+    return () => controller.abort();
+  }, [lat, lng]);
 
   // Debounced Search
   useEffect(() => {
@@ -161,9 +182,16 @@ export function LocationPicker({
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-primary-700">
-            {selectedPlace || "No location selected"}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-primary-700">
+              {selectedPlace || "No location selected"}
+            </span>
+            {detectedTz && (
+              <span className="text-xs text-gray-500">
+                Timezone: {detectedTz.timezone} ({detectedTz.offsetLabel})
+              </span>
+            )}
+          </div>
 
           <div className="flex space-x-2">
             <Button type="button" variant="secondary" onClick={handleUseCurrentLocation} size="sm">
